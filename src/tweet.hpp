@@ -10,5 +10,18 @@
 #define tweet_hpp
 
 #include <stdio.h>
+#include <iostream>
 
+#include <cstdio>
+#include <cstdlib>
+#include <time.h>
+
+using namespace std;
+
+class Tweet {
+public:
+    int id;
+    string message;
+    time_t time;
+};
 #endif /* tweet_hpp */

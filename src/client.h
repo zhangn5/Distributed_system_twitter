@@ -12,7 +12,7 @@ using namespace std;
 
 class Client {
   public:
-    char *name;
+    //char *name;
     int id;
 
     //Socket stuff
@@ -20,7 +20,7 @@ class Client {
 
   public:
     Client();
-    void SetName(const char *name);
+    //void SetName(const char *name);
     void SetId(int id);
 };
 
