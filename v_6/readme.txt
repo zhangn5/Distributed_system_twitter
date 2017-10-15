@@ -1,0 +1,4 @@
+- updated the "view" function, now the time is displayed correctly
+- updated the "tweet" function, now everyone can receive the tweets, and put into log
+- "tweet" will be sent multiple logs to everyone, which I think is redundant. See line 123 in Server.cpp.
+- "block" and "unblock" will incur segfault
