@@ -22,6 +22,7 @@ public:
     string op;
 
     const string covToString() const;
+    const string convToStringForViewlog() const;
 
 };
 

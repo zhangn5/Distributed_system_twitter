@@ -364,7 +364,7 @@ void Server::view() {
 
             getline(left, content, '#');
             istringstream tt2(content);
-            tt2.imbue(locale("de_DE.utf-8"));
+            //tt2.imbue(locale("de_DE.utf-8"));
             tt2 >> get_time(&tm, "%a %b %d %H:%M:%S %Y");
             tweet.utc = mktime(&tm);
             vt.push_back(tweet);
@@ -380,8 +380,11 @@ void Server::view() {
     
 }
 void Server::viewlog(){
+    cout <<"____________________________________________\n";
+    cout <<"| userID | timestamp | length | operation |\n";
+    cout <<"----------------------------------------------------------------------------------------\n";
     for(auto it = log.Events.begin(); it != log.Events.end(); it++){
-        cout << (*it).covToString() << endl;
+        cout << (*it).convToStringForViewlog() << endl;
     }
 }
 
