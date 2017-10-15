@@ -24,7 +24,7 @@
 #include <set>
 #include <vector>
 #include <string>
-#define BUFFER_SIZE 262144
+#define BUFFER_SIZE 256
 
 using namespace std;
 
@@ -33,7 +33,7 @@ class Server {
   private:
     int serverSock, clientSock;
     struct sockaddr_in serverAddr, clientAddr;
-    char buff[BUFFER_SIZE];
+    //char buff[BUFFER_SIZE];
 
   public:
     Server(int siteID, unordered_map<int, pair<string, string> >& address, int numSites);

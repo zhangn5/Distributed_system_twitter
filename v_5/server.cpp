@@ -31,7 +31,6 @@ Server::Server(int siteID, unordered_map<int, pair<string, string> >& address, i
     addr = address;
     userID = siteID;
     numSites = numSites_;
-    
     //Each site(server) store the log containing tweet, block and unblock events
     //Init the log, dictionary, timetable and clock for Wuu Bernstein algorithm
     Log log;
@@ -105,7 +104,6 @@ void Server::doStartTweet() {
             
             clock++;
             timeTable[userID-1][userID-1] = clock;
-            
             //add the local time and UTC time in the tweet op
             time_t localtime;
             struct tm *utctm;
@@ -116,13 +114,13 @@ void Server::doStartTweet() {
             //cerr << op << "\n";
             log.updateLog(op, clock, userID);
             string tmsg = convertTo1DTT(timeTable);
-            
+            //cout << "CovertTo1DTT: " << tmsg << "\n";
             //construct sending log content NP
             vector<string> NP;
             for(auto it = log.Events.begin(); it != log.Events.end(); it++){
                 for(int j = 0; j < numSites; j++){//if unblocked could be sent
                     if(!hasRec(timeTable, *it, j)){
-                        NP.push_back((*it).covToString());
+                        NP.push_back((*it).covToString());//why push_back numSite times?
                     }
                 }
             }
@@ -144,10 +142,16 @@ void Server::doStartTweet() {
             
             string ownview = string(ctime(&localtime)) + " " + to_string(id)+" "+"tweet "+input;
             cout << ownview << endl;
-            
+            //cout << "userID: " <<userID << "\n";
+            //cout << "tmsglen: "<<tmsglen<<"\n";
+            //cout <<"tmsg: "<<tmsg << "\n";
+            //cout << "npmsglen: " << npmsglen << "\n";
+            //cout <<"npmsg: "<<npmsg<<"\n";
+            //cout << "plnpmsglen: " << plnpmsglen << "\n";
+            //cout <<"plnpmsg: "<<plnpmsg<<"\n";
             //construct sending message with timetable ,np and partial log np
             string sending = to_string(userID) +" "+ to_string(tmsglen) + " " + tmsg + to_string(npmsglen) +" " + npmsg + to_string(plnpmsglen) + " " + plnpmsg;
-            
+            //cout << "sending: "<<sending << "\n";
             const char* sendout = sending.c_str();
             
             fdv.clear();//has to clear fd set, because some site can be down and up anytime
@@ -168,7 +172,7 @@ void Server::doStartTweet() {
             }
             for(auto & i : fdv) {
                 n = send(i, sendout, strlen(sendout), 0);
-                //cout << n << " bytes sent." << endl;
+                close(i);
             }
         } else if (cmd == "block") {
             getline(cin, input);
@@ -198,22 +202,11 @@ void Server::doHandleClient(int fd) {
     char buffer[BUFFER_SIZE];
     int index;
     int n;
-    while(1) {
-        memset(buffer, 0, sizeof(buffer));
-        n = recv(fd, buffer, sizeof(buffer), 0);
-        if (n < 0) break;//cout << "error on recv\n";
-        else if (n==0) break;//connection lost
-        else if (n > 0) {
-            //MyThread::LockMutex("stdout");
-            //lock_guard<std::mutex> lock(mtx);
-            cerr << "Received message: "<< buffer << "\n>> ";
-            //MyThread::UnlockMutex("stdout");
-            string tmp = string(buffer);
-            doSomethingWithReceivedData(tmp);
-        }
-    }
-    //End thread
-    //return NULL;
+    string tmp;
+    while((n = recv(fd, buffer, sizeof(buffer), 0))>0)
+        tmp.append(buffer, n);
+    cerr << "Received message: "<< tmp << "\n>> ";
+    doSomethingWithReceivedData(tmp);
 }
 
 
@@ -225,16 +218,20 @@ void Server::doSomethingWithReceivedData(string& message) {
     int start = 0;
     ss >> cont;
     int userIDk = stoi(cont);
+    //cout << "RECV userID: " << userIDk << "\n";
+    
     start += cont.length() + 1;
     ss >> cont;
     start += cont.length() + 1;
     tmsg = message.substr(start, stoi(cont));
+    //cout << "RECV tmsg: " << tmsg << "\n";
     
     start += stoi(cont);
     stringstream left1(message.substr(start));
     left1 >> cont;
     start += cont.length() + 1;
     npmsg = message.substr(start, stoi(cont));
+    //cout << "RECV npmsg: " << npmsg << "\n";
     
     start += stoi(cont);
     //cout << start<< ","<< message.size() << "\n";
@@ -248,7 +245,7 @@ void Server::doSomethingWithReceivedData(string& message) {
     //userID can be read from the tweet
     vector<Event> npv = recvNP(npmsg);
     vector<Event> plnpv = recvNP(plnpmsg);
-
+    
     vector<Event> NE;
     vector<vector<int> > tmsgTable = recvTT(tmsg);//
     //NE
@@ -276,7 +273,7 @@ void Server::doSomethingWithReceivedData(string& message) {
             }
         }
     }
-    
+    //cout << "here final\n";
     
     for(int i = 0; i < npv.size(); i++){
         log.Events.insert(npv[i]);
@@ -294,6 +291,8 @@ void Server::doSomethingWithReceivedData(string& message) {
     for(int i = 0; i < NE.size(); i++){
         dict.PL.insert(NE[i]);
     }
+    
+    auto tmpDict = dict;
     for(auto it = dict.PL.begin(); it != dict.PL.end(); it++){
         bool good = false;
         for(int j = 0; j < numSites; j++){
@@ -303,10 +302,10 @@ void Server::doSomethingWithReceivedData(string& message) {
             }
         }
         if(good == false){
-            dict.PL.erase(it);
+            tmpDict.PL.erase(it);//cannot erase on the original dict, or iterator will be wrong
         }
     }
-
+    dict = tmpDict;
 }
 
 void Server::block(string& input) {
@@ -355,12 +354,11 @@ void Server::view() {
             getline(ss, content, '#');
             tweetlen = stoi(content);
             tweet.message = (*it).op.substr(7 + (to_string(tweetlen)).length(), tweetlen);
-            stringstream left((*it).op.substr(7 + (to_string(tweetlen)).length() + tweetlen));
+            stringstream left((*it).op.substr(8 + (to_string(tweetlen)).length() + tweetlen));
             getline(left, content, '#');
-            
             struct tm tm;
             istringstream tt1(content);
-            tt1.imbue(locale("de_DE.utf-8"));
+            //tt1.imbue(locale("de_DE.utf-8"));
             tt1 >> get_time(&tm, "%a %b %d %H:%M:%S %Y");
             tweet.local = mktime(&tm);
 
@@ -376,7 +374,7 @@ void Server::view() {
     cout << "Viewable tweets:" << endl;
     for (auto it=vt.begin(); it!=vt.end(); ++it){
         if(blockeduser.find((*it).userID) == blockeduser.end()){
-            cout << ctime(&(*it).local) << " " << to_string((*it).userID) << " " << (*it).message << endl;
+            cout << ctime(&(*it).local) << " User " << to_string((*it).userID) << " tweeted: " << (*it).message << endl;
         }
     }
     
@@ -422,36 +420,45 @@ vector<Event> Server::recvNP(string& npmsg){
     int posi = 0; //position of first space
     int posj = 0;
     int type = 0;
+    //cout << "npmsg: " << npmsg << "," <<npmsg.size()<< "\n";
     while((posj = npmsg.find(' ', posi)) != -1){
+        //cout << "j: " << posj << "\n";
         if(type == 0){
             e.userID = stoi(npmsg.substr(posi, posj-posi));
+            //cout << "e.userID "<< e.userID << "\n";
         }else if (type == 1){
             e.clock = stoi(npmsg.substr(posi, posj-posi));
+            //cout << "e.clock "<< e.clock << "\n";
         }else if(type == 2){
             int len = stoi(npmsg.substr(posi, posj-posi));
-            e.op = npmsg.substr(posj, len);
+            e.op = npmsg.substr(posj+1, len);//posj+1 to skip the ' '
+            //cout << "e.op "<< e.op << "\n";
             posj += len + 1;
             ve.push_back(e);
         }
         type = (type + 1) % 3;
         posi = posj + 1;
     }
+    
     return ve;
 }
 
-vector<vector<int> > Server::recvTT(string& tmsg){
+vector<vector<int> > Server::recvTT(string& tmsg){//updated
+    //cout << "in functino recvTT: " << tmsg << "\n";
     vector<vector<int> > arr(numSites);
     stringstream ss(tmsg);
     int value;
     int count = 0;
     int i = 0;
     while(ss >> value){
-        while(count < numSites){
+        if (count < numSites){
             arr[i].push_back(value);
             count++;
+        } else {
+            i++;
+            count = 0;
+            arr[i].push_back(value);
         }
-        i++;
-        count = 0;
     }
     return arr;
 }
