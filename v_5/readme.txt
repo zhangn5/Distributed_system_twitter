@@ -1,0 +1,7 @@
+- each server can receive messages from all sites
+- each server can type in tweets while receiving messages
+- has a nice little prompt ">>" indicating that the user can start typing
+- when one site is down, it does not affect other sites.
+- when a site is up, other sites will discover it once other sites have something to send.
+- only implemented "tweet", since only "tweet" should notify other sites. Block, unblock, and view are all local operations, so no need to send these messages to other sites
+-  the "block()", "unblock()", "view()", "doSomethingWithReceivedData()" are left empty for Wuu-Berstain algorithm implementation.
