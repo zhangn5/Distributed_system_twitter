@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
         port = str.substr(pos);
         address[i+1]=make_pair(ip, port);
     }
-    cout << "Valid commands: tweet <text>, block <username>, unblock <username>, view\n";
+    cout << "Valid commands: tweet <text>, block <username>, unblock <username>, view, viewlog, viewdict\n";
     cout << "Start to accept request from other sites\n";
     Server *s;
     s = new Server(siteID, address, numSites);

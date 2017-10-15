@@ -34,7 +34,9 @@ Server::Server(int siteID, unordered_map<int, pair<string, string> >& address, i
     //Each site(server) store the log containing tweet, block and unblock events
     //Init the log, dictionary, timetable and clock for Wuu Bernstein algorithm
     Log log;
+    log.readFromDisk();
     Dictionary dict;
+    dict.readFromDisk();
     timeTable = vector<vector<int> >(numSites, vector<int>(numSites, 0));
     clock = 0;
     
@@ -242,38 +244,38 @@ void Server::doSomethingWithReceivedData(string& message) {
     int start = 0;
     ss >> cont;
     int userIDk = stoi(cont);
-    cout << "RECV userID: " << userIDk << "\n";
+    //cout << "RECV userID: " << userIDk << "\n";
     
     start += cont.length() + 1;
     ss >> cont;
     start += cont.length() + 1;
     tmsg = message.substr(start, stoi(cont));
-    cout << "RECV tmsg: " << tmsg << "\n";
+    //cout << "RECV tmsg: " << tmsg << "\n";
     
     start += stoi(cont);
     stringstream left1(message.substr(start));
     left1 >> cont;
     start += cont.length() + 1;
     npmsg = message.substr(start, stoi(cont));
-    cout << "RECV npmsg: " << npmsg << "\n";
+    //cout << "RECV npmsg: " << npmsg << "\n";
     
     start += stoi(cont);
-    cout << start<< ","<< message.size() << "\n";
+    //cout << start<< ","<< message.size() << "\n";
     stringstream left2(message.substr(start));
     left2 >> cont;
-    cout << "cont: "<<cont<<"\n";
+    //cout << "cont: "<<cont<<"\n";
     
     bool hasplnp = (stoi(cont)>0);
     if (hasplnp) {
         plnpmsg = message.substr(start + cont.length() + 1, stoi(cont));
-        cout << "plnpmsg: "<<plnpmsg<<"\n";
+        //cout << "plnpmsg: "<<plnpmsg<<"\n";
     }
     //userID can be read from the tweet
     
     vector<Event> npv = recvNP(npmsg);
     vector<Event> NE;
     
-    cout << "pos1" << endl;
+    //cout << "pos1" << endl;
     if(hasplnp){
         vector<Event> plnpv = recvNP(plnpmsg);
         //NE
@@ -284,7 +286,7 @@ void Server::doSomethingWithReceivedData(string& message) {
             }
         }
         
-        cout << "pos2" << endl;
+        //cout << "pos2" << endl;
 
         //update entries
         for(int i = 0; i < NE.size(); i++){
@@ -297,15 +299,16 @@ void Server::doSomethingWithReceivedData(string& message) {
             }
         }
         
-        cout << "pos3" << endl;
+        //cout << "pos3" << endl;
 
-        cout << "entry size is "<< dict.Entry.size() << endl;
+        //cout << "entry size is "<< dict.Entry.size() << endl;
         
         for(int j = 0; j < NE.size(); j++){
             for(auto it = dict.Entry.begin(); it != dict.Entry.end(); ){
 
                 if(NE[j].op == "unblock "+ to_string((*it).second) && NE[j].userID == (*it).first){
-                    it = dict.Entry.erase(it);
+                    //it = dict.Entry.erase(it);
+                    it = dict.Erase(it);
                     /*
                     //look at the log and erase the block and unblock history
                     
@@ -323,14 +326,14 @@ void Server::doSomethingWithReceivedData(string& message) {
                 }
             }
         }
-        cout << "pos4" << endl;
+        //cout << "pos4" << endl;
 
         
     }
     
     vector<vector<int> > tmsgTable = recvTT(tmsg);//
     
-    cout << "pos5" << endl;
+    //cout << "pos5" << endl;
 
     
     //cout << "here final\n";
@@ -347,7 +350,7 @@ void Server::doSomethingWithReceivedData(string& message) {
         }
     }
     
-    cout << "pos6" << endl;
+    //cout << "pos6" << endl;
 
     if(hasplnp){
 
@@ -356,7 +359,7 @@ void Server::doSomethingWithReceivedData(string& message) {
             dict.PL.insert(NE[i]);
         }
         
-        cout << "pos7" << endl;
+        //cout << "pos7" << endl;
 
         for(auto it = dict.PL.begin(); it != dict.PL.end(); ){
             bool good = false;
@@ -372,10 +375,10 @@ void Server::doSomethingWithReceivedData(string& message) {
                 it++;
             }
         }
-        cout << "pos8" << endl;
+        //cout << "pos8" << endl;
 
     }
-    cout << "pos9" << endl;
+    //cout << "pos9" << endl;
 
     
 }

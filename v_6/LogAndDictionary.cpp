@@ -13,6 +13,57 @@
 
 using namespace std;
 
+void Log::writeToDisk() {
+    ofstream output("log.txt");
+    for(auto & i : Events)
+        output << i.convToStringForStoring() << "\n";
+    output.close();
+}
+
+void Log::readFromDisk() {
+    cout << "Reading log from disk...\n";
+    ifstream input("log.txt");
+    Events.clear();
+    string str;
+    while(getline(input, str)) {
+        int idx1 = str.find('#');
+        int idx2 = str.find('#', idx1+1);
+        Event e;
+        e.userID = stoi(str.substr(0, idx1));
+        e.clock = stoi(str.substr(idx1+1, idx2-idx1));
+        e.op = str.substr(idx2+1);
+        Events.insert(e);
+    }
+    input.close();
+}
+
+void Dictionary::writeToDisk() {
+    ofstream output("dict.txt");
+    for(auto & i : Entry)
+        output << i.first <<"#"<<i.second<<"\n";
+    output.close();
+}
+
+set<pair<int, int> >::iterator Dictionary::Erase(set<pair<int, int> >::iterator& it) {
+    auto res = Entry.erase(it);
+    writeToDisk();
+    return res;
+}
+
+void Dictionary::readFromDisk() {
+    cout << "Reading dictionary from disk...\n";
+    ifstream input("dict.txt");
+    Entry.clear();
+    string str;
+    while(getline(input, str)) {
+        int idx = str.find('#');
+        int a = stoi(str.substr(0, idx));
+        int b = stoi(str.substr(idx+1));
+        Entry.insert({a, b});
+    }
+    input.close();
+}
+
 
 const string Event::covToString() const{
     string s = "";
@@ -44,7 +95,11 @@ const string Event::convToStringForViewlog() const {
     return s;
 }
 
-
+const string Event::convToStringForStoring() const {
+    string s = to_string(userID)+"#"+to_string(clock)+"#"+op;
+    s.erase(std::remove(s.begin(), s.end(), '\n'), s.end());
+    return s;
+}
 
 void Log::updateLog(string op, int clock, int userID){
     Event newEvent;
@@ -52,6 +107,7 @@ void Log::updateLog(string op, int clock, int userID){
     newEvent.clock = clock;
     newEvent.userID = userID;
     Events.insert(newEvent);
+    writeToDisk();
 }
 
 void Log::updateLogUnblock(string op, int clock, int userID, int unblockID){
@@ -72,11 +128,13 @@ void Log::updateLogUnblock(string op, int clock, int userID, int unblockID){
         newEvent.userID = userID;
         Events.insert(newEvent);
     }
+    writeToDisk();
 }
 
 
 void Dictionary::Insert(int user1, int user2){
     Entry.insert(make_pair(user1, user2));
+    writeToDisk();
 }
 void Dictionary::Delete(int user1, int user2){
     if(Entry.find(make_pair(user1, user2)) != Entry.end()){
@@ -84,6 +142,7 @@ void Dictionary::Delete(int user1, int user2){
     }else{
         cerr << "Not able to unblock because it's not blocked";
     }
+    writeToDisk();
 }
 void Dictionary::updatePartialLog(string op, int clock, int userID){
     Event newEvent;
