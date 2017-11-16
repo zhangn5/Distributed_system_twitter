@@ -141,8 +141,8 @@ void Server::doStartTweet() {
             unblock(e);
         }
         else if (cmd == "view") view();
-        else if (cmd == "viewlog") viewlog();
-        else if (cmd == "viewdict") viewdict();
+        else if (cmd == "viewLog") viewLog();
+        else if (cmd == "viewdBlock") viewBlock();
         else cerr << "invalid command\n";
     }
 }
@@ -288,9 +288,9 @@ void Server::view() {
     //collect tweets from the local log
     vector<Tweet> vt;
     for(auto& itr = timeline.begin(); itr != timeline.end(); itr++){
-        for(auto & tweet : itr->second) {
-            vt.push_back(tweet);
-        }
+        //for(auto & tweet : itr->second) {
+            vt.push_back(*itr);
+        //}
     }
     sort(vt.begin(), vt.end(), comparetime);
     cout << "Viewable tweets:" << endl;
@@ -312,25 +312,6 @@ void Server::viewBlocked(){
     for(auto it = block.begin(); it != block.end(); it++){
         cout << (*it).second << endl;
     }
-}
-
-vector<vector<int> > Server::recvTT(string& tmsg){//updated
-    vector<vector<int> > arr(numSites);
-    stringstream ss(tmsg);
-    int value;
-    int count = 0;
-    int i = 0;
-    while(ss >> value){
-        if (count < numSites){
-            arr[i].push_back(value);
-            count++;
-        } else {
-            i++;
-            count = 0;
-            arr[i].push_back(value);
-        }
-    }
-    return arr;
 }
 
 void convertTime(string itime, struct tm& ot){

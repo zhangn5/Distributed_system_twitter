@@ -37,7 +37,8 @@ class Server {
     int userId;
     Log log;
     int numSites;
-    
+    set<Event> timeline;
+    unordered_set<int> block;
     set<pair<int, int> > fdv;
     unordered_map<int, pair<string, string> > addr;
     
